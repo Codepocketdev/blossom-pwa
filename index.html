@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#667eea">
+    <meta name="description" content="Your Decentralized Media Server">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <title>Blossom Media Server</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .install-prompt {
+            background: rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .install-prompt.show {
+            display: flex;
+        }
+
+        .install-btn {
+            background: white;
+            color: #667eea;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            margin-bottom: 30px;
+        }
+
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 60px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8f9ff;
+        }
+
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: #f0f1ff;
+            transform: translateY(-2px);
+        }
+
+        .upload-area.dragging {
+            border-color: #764ba2;
+            background: #e8e9ff;
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+
+        .upload-text {
+            font-size: 1.3em;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .upload-subtext {
+            color: #666;
+            font-size: 0.95em;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 10px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: transform 0.2s;
+            font-weight: 600;
+            margin-top: 20px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .progress-container {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            text-align: center;
+            margin-top: 10px;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .result {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            background: #f0fdf4;
+            border: 2px solid #22c55e;
+            border-radius: 10px;
+        }
+
+        .result.error {
+            background: #fef2f2;
+            border-color: #ef4444;
+        }
+
+        .result-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .result.error .result-title {
+            color: #ef4444;
+        }
+
+        .result:not(.error) .result-title {
+            color: #22c55e;
+        }
+
+        .url-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .url-input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .copy-btn {
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: #764ba2;
+        }
+
+        .file-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .info-item {
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-size: 0.9em;
+        }
+
+        .info-label {
+            color: #666;
+            font-size: 0.85em;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .selected-file {
+            display: none;
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9ff;
+            border-radius: 10px;
+            border: 2px solid #667eea;
+        }
+
+        .selected-file.show {
+            display: block;
+        }
+
+        .file-preview {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .file-icon {
+            font-size: 3em;
+        }
+
+        .file-details {
+            flex: 1;
+        }
+
+        .file-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .file-meta {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .card {
+                padding: 20px;
+            }
+            
+            .upload-area {
+                padding: 40px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌸 Blossom Media</h1>
+            <p>Your Decentralized Media Server</p>
+        </div>
+
+        <div class="install-prompt" id="installPrompt">
+            <span>📱 Install Blossom as an app for quick access!</span>
+            <button class="install-btn" id="installButton">Install App</button>
+        </div>
+
+        <div class="card">
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📤</div>
+                <div class="upload-text">Drop your file here or click to browse</div>
+                <div class="upload-subtext">Images, Videos, Audio, Documents - All supported</div>
+                <input type="file" id="fileInput" accept="*/*">
+            </div>
+
+            <div class="selected-file" id="selectedFile">
+                <div class="file-preview">
+                    <div class="file-icon" id="fileIcon">📄</div>
+                    <div class="file-details">
+                        <div class="file-name" id="fileName"></div>
+                        <div class="file-meta" id="fileMeta"></div>
+                    </div>
+                </div>
+                <button class="btn" id="uploadBtn">Upload to Blossom</button>
+            </div>
+
+            <div class="progress-container" id="progressContainer">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-text" id="progressText">Uploading...</div>
+            </div>
+
+            <div class="result" id="result">
+                <div class="result-title" id="resultTitle"></div>
+                <div class="file-info" id="fileInfo"></div>
+                <div class="url-container">
+                    <input type="text" class="url-input" id="resultUrl" readonly>
+                    <button class="copy-btn" id="copyBtn">Copy URL</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const BLOSSOM_SERVER = 'https://ea0abf0c7ee50aed-185-195-236-201.serveousercontent.com/';
+        
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const selectedFile = document.getElementById('selectedFile');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+        const result = document.getElementById('result');
+        const resultTitle = document.getElementById('resultTitle');
+        const resultUrl = document.getElementById('resultUrl');
+        const copyBtn = document.getElementById('copyBtn');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const fileMeta = document.getElementById('fileMeta');
+        const fileIcon = document.getElementById('fileIcon');
+
+        let selectedFileData = null;
+
+        // PWA Install
+        let deferredPrompt;
+        const installPrompt = document.getElementById('installPrompt');
+        const installButton = document.getElementById('installButton');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installPrompt.classList.add('show');
+        });
+
+        installButton.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log(`User response: ${outcome}`);
+                deferredPrompt = null;
+                installPrompt.classList.remove('show');
+            }
+        });
+
+        // Register service worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(reg => console.log('Service Worker registered'))
+                .catch(err => console.log('Service Worker registration failed'));
+        }
+
+        // File type icons
+        const getFileIcon = (type) => {
+            if (type.startsWith('image/')) return '🖼️';
+            if (type.startsWith('video/')) return '🎥';
+            if (type.startsWith('audio/')) return '🎵';
+            if (type.includes('pdf')) return '📄';
+            if (type.startsWith('text/')) return '📝';
+            return '📦';
+        };
+
+        // Format file size
+        const formatSize = (bytes) => {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+            return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+        };
+
+        // SHA256 hash
+        async function sha256(buffer) {
+            const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        // Click to upload
+        uploadArea.addEventListener('click', () => fileInput.click());
+
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragging');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragging');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragging');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileSelect(files[0]);
+            }
+        });
+
+        // File input change
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelect(e.target.files[0]);
+            }
+        });
+
+        // Handle file selection
+        function handleFileSelect(file) {
+            selectedFileData = file;
+            fileName.textContent = file.name;
+            fileMeta.textContent = `${formatSize(file.size)} • ${file.type || 'Unknown type'}`;
+            fileIcon.textContent = getFileIcon(file.type);
+            selectedFile.classList.add('show');
+            result.style.display = 'none';
+        }
+
+        // Upload button
+        uploadBtn.addEventListener('click', async () => {
+            if (!selectedFileData) return;
+
+            uploadBtn.disabled = true;
+            progressContainer.style.display = 'block';
+            result.style.display = 'none';
+
+            try {
+                // Read file
+                const arrayBuffer = await selectedFileData.arrayBuffer();
+                const hash = await sha256(arrayBuffer);
+
+                // Upload
+                const response = await fetch(BLOSSOM_SERVER, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': selectedFileData.type || 'application/octet-stream'
+                    },
+                    body: arrayBuffer
+                });
+
+                progressFill.style.width = '100%';
+
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult(true, data);
+                } else {
+                    const errorText = await response.text();
+                    showResult(false, { error: errorText });
+                }
+            } catch (error) {
+                showResult(false, { error: error.message });
+            } finally {
+                uploadBtn.disabled = false;
+                progressContainer.style.display = 'none';
+                progressFill.style.width = '0%';
+            }
+        });
+
+        // Show result
+        function showResult(success, data) {
+            result.style.display = 'block';
+            
+            if (success) {
+                result.classList.remove('error');
+                resultTitle.textContent = '✅ Upload Successful!';
+                resultUrl.value = data.url;
+                
+                fileInfo.innerHTML = `
+                    <div class="info-item">
+                        <div class="info-label">File Hash</div>
+                        <div class="info-value">${data.sha256.substring(0, 16)}...</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Size</div>
+                        <div class="info-value">${formatSize(data.size)}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Type</div>
+                        <div class="info-value">${data.type}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Uploaded</div>
+                        <div class="info-value">${new Date(data.uploaded * 1000).toLocaleString()}</div>
+                    </div>
+                `;
+            } else {
+                result.classList.add('error');
+                resultTitle.textContent = '❌ Upload Failed';
+                fileInfo.innerHTML = `<div class="info-item"><div class="info-value">${data.error}</div></div>`;
+                resultUrl.value = '';
+            }
+        }
+
+        // Copy URL
+        copyBtn.addEventListener('click', () => {
+            resultUrl.select();
+            document.execCommand('copy');
+            
+            const originalText = copyBtn.textContent;
+            copyBtn.textContent = '✓ Copied!';
+            setTimeout(() => {
+                copyBtn.textContent = originalText;
+            }, 2000);
+        });
+    </script>
+</body>
+</html>
