@@ -502,7 +502,10 @@
                     showResult(false, { error: errorText });
                 }
             } catch (error) {
-                showResult(false, { error: error.message });
+    console.error('Upload error:', error);
+    alert('Error details: ' + error.message);
+    showResult(false, { error: error.message });
+}
             } finally {
                 uploadBtn.disabled = false;
                 progressContainer.style.display = 'none';
