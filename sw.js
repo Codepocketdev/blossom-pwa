@@ -1,6 +1,7 @@
-const CACHE_NAME = 'blossom-v1';
+const CACHE_NAME = 'blossom-v2';
 const urlsToCache = [
-  './blossom-ui.html',
+  './',
+  './index.html',
   './manifest.json'
 ];
 
@@ -9,6 +10,24 @@ self.addEventListener('install', event => {
     caches.open(CACHE_NAME)
       .then(cache => cache.addAll(urlsToCache))
   );
+  // Force the waiting service worker to become the active service worker
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.map(cacheName => {
+          if (cacheName !== CACHE_NAME) {
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    })
+  );
+  // Take control of all pages immediately
+  return self.clients.claim();
 });
 
 self.addEventListener('fetch', event => {
